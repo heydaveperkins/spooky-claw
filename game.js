@@ -261,6 +261,25 @@
   document.body.appendChild(svhProbe);
   let debugReadout = null;
 
+  // The dedication below the cabinet, shown once the player is in (not on the
+  // loading or goodbye screens) and only where the window leaves a spare bar
+  // there: wider-than-tall desktop windows, not a phone's full-width view
+  const pageDedication = document.getElementById("pageDedication");
+  let dedicationWanted = false;
+  function placeDedication() {
+    if (!pageDedication) return;
+    const rect = canvas.getBoundingClientRect();
+    const bar = rect.width && rect.height
+      ? (rect.height - ART_H * Math.min(rect.width / ART_W, rect.height / ART_H)) / 2
+      : 0;
+    const show = dedicationWanted && bar >= 24;
+    pageDedication.hidden = !show;
+    if (!show) return;
+    const font = Math.min(18, Math.max(11, bar * 0.4));
+    pageDedication.style.fontSize = font + "px";
+    pageDedication.style.bottom = Math.max(2, window.innerHeight - rect.bottom + bar / 2 - font / 2) + "px";
+  }
+
   function fitStage() {
     // If the page has been zoomed, the visual viewport is the zoomed-in
     // window, not the screen: size to the page instead
@@ -272,6 +291,7 @@
     stage.style.top = Math.round(vvTop + vvH - h) + "px";
     stage.style.height = Math.round(h) + "px";
     stage.style.bottom = "auto";
+    placeDedication();
     if (debugReadout) {
       const sr = stage.getBoundingClientRect();
       debugReadout.textContent =
@@ -993,7 +1013,7 @@
   window.addEventListener("keydown", (e) => {
     if (!entered) {
       // On the loading screen, Enter or Space is the ENTER button
-      if ((e.code === "Enter" || e.code === "Space") && riveReady) {
+      if ((e.code === "Enter" || e.code === "Space") && canEnter) {
         e.preventDefault();
         enterGame();
       }
@@ -1558,6 +1578,8 @@
     const finished = game.mode === "timesUp";
     track(finished ? "leave-after-round" : "leave-mid-round", "Left the game");
     game.mode = "goodbye";
+    dedicationWanted = false;
+    placeDedication();
     game.clock = 0;
     game.bonus = false;
     game.bonusPending = false;
@@ -1589,6 +1611,8 @@
   function comeBack() {
     if (game.mode !== "goodbye") return;
     goodbye.hidden = true;
+    dedicationWanted = true;
+    placeDedication();
     resetHeap();
     enterAttract();
     syncMusicPlayback();
@@ -1610,13 +1634,23 @@
   ];
   const STATUS = [[0.25, "Waking the ghosts..."], [0.5, "Stuffing the plushies..."],
     [0.75, "Oiling the claw..."], [1.01, "Tuning the haunted organ..."]];
+  // The bar never finishes sooner than this, however fast the downloads, so
+  // each of the four messages stays up long enough to read (~1.2 s each).
+  // A slow connection is simply slower than this: the bar follows the real
+  // progress. Lower it for a quicker start.
+  const MIN_LOAD_MS = 4800;
+  const loadStart = performance.now();
+  let loadTicker = 0;
   let riveReady = false;
+  let canEnter = false; // the bar has finished and TAP TO ENTER is showing
   let entered = false;
 
   function showProgress() {
     const total = PRELOAD.reduce((a, it) => a + it.size, 0);
     const got = PRELOAD.reduce((a, it) => a + Math.min(it.got || 0, it.size), 0);
-    const p = Math.min(0.99, got / total); // 100% only once the game is running
+    const real = got / total;
+    const paced = (performance.now() - loadStart) / MIN_LOAD_MS;
+    const p = Math.min(0.99, real, paced); // 100% only once the game is running and the pacing is done
     const pct = Math.floor(p * 100);
     loaderFill.style.width = pct + "%";
     loaderBar.setAttribute("aria-valuenow", String(pct));
@@ -1659,6 +1693,7 @@
     track(installed ? "open-home-screen" : window.self !== window.top ? "open-embed" : "open-browser", "How it was opened");
     showInstallTip();
     showProgress();
+    loadTicker = setInterval(showProgress, 80); // keeps the paced bar moving between downloads
     const files = {};
     await Promise.all(PRELOAD.map((item) => fetchWithProgress(item)
       .then((buf) => { files[item.key] = buf; })
@@ -1669,21 +1704,31 @@
     startRive(files.riv || null);
   }
 
+  // Called when the game is running. The bar may still be pacing itself:
+  // wait until the messages have all had their time, then finish.
   function showEnter() {
-    loaderFill.style.width = "100%";
-    loaderPercent.textContent = "100%";
-    loaderStatus.textContent = "Ready!";
+    const wait = Math.max(0, MIN_LOAD_MS - (performance.now() - loadStart));
     setTimeout(() => {
-      loaderProgress.hidden = true;
-      enterButton.hidden = false;
-      enterButton.focus({ preventScroll: true });
-    }, 350);
+      clearInterval(loadTicker);
+      loaderFill.style.width = "100%";
+      loaderBar.setAttribute("aria-valuenow", "100");
+      loaderPercent.textContent = "100%";
+      loaderStatus.textContent = "Ready!";
+      setTimeout(() => {
+        canEnter = true;
+        loaderProgress.hidden = true;
+        enterButton.hidden = false;
+        enterButton.focus({ preventScroll: true });
+      }, 450);
+    }, wait);
   }
 
   // The ENTER tap is the first touch, so it also unlocks sound and music
   function enterGame() {
-    if (entered || !riveReady) return;
+    if (entered || !canEnter) return;
     entered = true;
+    dedicationWanted = true;
+    placeDedication();
     track("enter", "Tapped to enter");
     goFullscreen();
     unlockAudio();
@@ -1740,7 +1785,7 @@
       }
     }
     tip.hidden = true;
-    if (riveReady) enterButton.focus({ preventScroll: true });
+    if (canEnter) enterButton.focus({ preventScroll: true });
   }
   document.getElementById("tipOk").addEventListener("click", closeTip);
   tipInstall.addEventListener("click", () => {
