@@ -288,18 +288,13 @@
     }
   }
 
-  let lastBounds = "";
+  // The layout's own bounds are the canvas drawing area, which the runtime
+  // resets to the full canvas on every resize; Contain then fits the whole
+  // artboard into it
   function resize() {
     fitStage();
     if (!r) return;
     r.resizeDrawingSurfaceToCanvas(Math.min(window.devicePixelRatio || 1, 2));
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const b = viewBounds();
-    const key = [b.minX, b.maxX].map(Math.round).join(",");
-    if (key === lastBounds) return;
-    lastBounds = key;
-    r.layout = new riveLib.Layout({ fit: riveLib.Fit.Contain, alignment: riveLib.Alignment.Center, ...b });
   }
   window.addEventListener("resize", resize);
   window.addEventListener("orientationchange", resize);
