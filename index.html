@@ -14,7 +14,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <title>Spooky Claw</title>
   <link rel="preload" href="fonts/Fredoka-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=202610302217">
+  <link rel="stylesheet" href="styles.css?v=202610302235">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -95,6 +95,67 @@
     <button class="enter-button" id="enterButton" type="button" hidden>TAP TO ENTER</button>
   </section>
 
+  <!-- Shown when a player leaves: the title plushies, standing still and in tears -->
+  <section class="loader goodbye" id="goodbye" aria-labelledby="goodbyeTitle" hidden>
+    <div class="loader-moon" aria-hidden="true"></div>
+    <svg class="loader-hills" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 200V90C150 40 280 40 420 90S700 140 820 80S960 50 1000 70V200Z" fill="#2e3a5e"/>
+      <path d="M0 200V140C180 110 330 120 500 150S780 160 1000 130V200Z" fill="#2a2448"/>
+    </svg>
+    <div class="loader-marquee">
+      <span class="bulbs bulbs-top" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <h1 id="goodbyeTitle">GOODBYE!</h1>
+      <span class="bulbs bulbs-bottom" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+    <p class="goodbye-thanks">Thanks for playing Spooky Claw</p>
+
+    <div class="loader-plushies sad-plushies" aria-hidden="true">
+      <div class="sad-plush">
+        <svg viewBox="0 0 120 120">
+          <ellipse cx="62" cy="112" rx="46" ry="6" fill="#120a1c" opacity=".3"/>
+          <rect x="55" y="12" width="12" height="20" rx="5" fill="#6b5a3a" transform="rotate(10 61 22)"/>
+          <ellipse cx="78" cy="18" rx="12" ry="6" fill="#7c9356" transform="rotate(-20 78 18)"/>
+          <ellipse cx="64" cy="70" rx="52" ry="40" fill="#a85a2a"/>
+          <ellipse cx="60" cy="66" rx="52" ry="40" fill="#d98545"/>
+          <ellipse cx="54" cy="58" rx="36" ry="28" fill="#eba36a"/>
+          <path d="M40 32 C 30 52 30 82 40 102 M80 32 C 90 52 90 82 80 102" stroke="#b5652e" stroke-width="3" fill="none"/>
+          <path d="M43 58 L52 63 L43 68 M81 58 L72 63 L81 68" stroke="#2a1a33" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M46 70 L46 96 M78 70 L78 96" stroke="#9dc4e8" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+        <path d="M51 86 Q62 74 73 86 Q62 92 51 86 Z" fill="#2a1a33"/>
+        </svg>
+        <i class="tear tear-l"></i><i class="tear tear-l tear-late"></i><i class="tear tear-r"></i><i class="tear tear-r tear-late"></i>
+      </div>
+      <div class="sad-plush">
+        <svg viewBox="0 0 120 120">
+          <ellipse cx="62" cy="112" rx="40" ry="6" fill="#120a1c" opacity=".3"/>
+          <path d="M24 104 V58 A36 36 0 0 1 100 58 V104 Q 94 96 87 104 Q 81 112 74 104 Q 68 96 62 104 Q 56 112 49 104 Q 43 96 37 104 Q 31 112 24 104 Z" fill="#c9bfa8" transform="translate(4 4)"/>
+          <path d="M24 104 V58 A36 36 0 0 1 100 58 V104 Q 94 96 87 104 Q 81 112 74 104 Q 68 96 62 104 Q 56 112 49 104 Q 43 96 37 104 Q 31 112 24 104 Z" fill="#f1eadb"/>
+          <path d="M34 56 A26 26 0 0 1 84 48 V60 H34 Z" fill="#fffbf2"/>
+          <path d="M43 58 L52 63 L43 68 M81 58 L72 63 L81 68" stroke="#2a1a33" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M46 70 L46 96 M78 70 L78 96" stroke="#9dc4e8" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+        <path d="M51 86 Q62 74 73 86 Q62 92 51 86 Z" fill="#2a1a33"/>
+        </svg>
+        <i class="tear tear-l"></i><i class="tear tear-l tear-late"></i><i class="tear tear-r"></i><i class="tear tear-r tear-late"></i>
+      </div>
+      <div class="sad-plush">
+        <svg viewBox="0 0 120 120">
+          <ellipse cx="62" cy="112" rx="44" ry="6" fill="#120a1c" opacity=".3"/>
+          <path d="M18 50 L24 14 L48 36 Z M102 50 L96 14 L72 36 Z" fill="#3a2e4a" stroke="#3a2e4a" stroke-width="6" stroke-linejoin="round"/>
+          <rect x="16" y="30" width="92" height="80" rx="34" fill="#241c30" transform="translate(4 4)"/>
+          <rect x="16" y="30" width="92" height="80" rx="34" fill="#3a2e4a"/>
+          <ellipse cx="62" cy="74" rx="32" ry="26" fill="#e9dcbf"/>
+          <path d="M43 58 L52 63 L43 68 M81 58 L72 63 L81 68" stroke="#2a1a33" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M46 70 L46 96 M78 70 L78 96" stroke="#9dc4e8" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+        <path d="M51 86 Q62 74 73 86 Q62 92 51 86 Z" fill="#2a1a33"/>
+        </svg>
+        <i class="tear tear-l"></i><i class="tear tear-l tear-late"></i><i class="tear tear-r"></i><i class="tear tear-r tear-late"></i>
+      </div>
+    </div>
+
+    <p class="goodbye-score" id="goodbyeScore"></p>
+    <button class="goodbye-again" id="goodbyeAgain" type="button">Play again</button>
+  </section>
+
   <!-- Phones in a browser tab: how to get the full-screen, home-screen version -->
   <div class="tip" id="installTip" role="dialog" aria-modal="true" aria-labelledby="tipTitle" hidden>
     <div class="tip-card">
@@ -139,6 +200,6 @@
        tools/build.sh bumps them on every build. -->
   <!-- Rive web runtime, pinned and vendored: @rive-app/webgl2 2.44.2 -->
   <script src="vendor/rive-webgl2-2.44.2/rive.js"></script>
-  <script src="game.js?v=202610302217"></script>
+  <script src="game.js?v=202610302235"></script>
 </body>
 </html>

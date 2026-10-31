@@ -120,7 +120,10 @@
     drop: { cx: 1775, cy: 650, r: 150 },              // right wing
     start: { x0: 720, x1: 1030, y0: 545, y1: 685 },   // title card START
     sound: { x0: 1045, x1: 1265, y0: 545, y1: 685 },  // title card SOUND ON/OFF
-    again: { x0: 795, x1: 1155, y0: 545, y1: 685 },   // results card PLAY AGAIN
+    again: { x0: 720, x1: 1030, y0: 545, y1: 685 },   // results card PLAY AGAIN
+    leave: { x0: 1045, x1: 1265, y0: 545, y1: 685 },  // results card LEAVE
+    music: { cx: 112, cy: 470, r: 62 },               // left wing: music on/off
+    exit: { cx: 238, cy: 470, r: 62 },                // left wing: leave the game
   };
 
   // The build stamp on this script's URL (game.js?v=...), reused for the .riv
@@ -230,7 +233,9 @@
   let debugReadout = null;
 
   function fitStage() {
-    const vv = window.visualViewport;
+    // If the page has been zoomed, the visual viewport is the zoomed-in
+    // window, not the screen: size to the page instead
+    const vv = window.visualViewport && Math.abs(window.visualViewport.scale - 1) < 0.01 ? window.visualViewport : null;
     const vvH = vv ? vv.height : window.innerHeight;
     const vvTop = vv ? vv.offsetTop : 0;
     const svh = svhProbe.getBoundingClientRect().height || window.innerHeight;
@@ -242,7 +247,8 @@
       const sr = stage.getBoundingClientRect();
       debugReadout.textContent =
         `inner ${window.innerWidth}x${window.innerHeight}  dpr ${window.devicePixelRatio}\n` +
-        `visual ${vv ? Math.round(vv.width) + "x" + Math.round(vv.height) + " @" + Math.round(vv.offsetTop) : "n/a"}\n` +
+        `visual ${window.visualViewport ? Math.round(window.visualViewport.width) + "x" + Math.round(window.visualViewport.height) +
+          " @" + Math.round(window.visualViewport.offsetTop) + " zoom " + window.visualViewport.scale.toFixed(2) : "n/a"}\n` +
         `svh ${Math.round(svh)}  stage ${Math.round(sr.width)}x${Math.round(sr.height)} @${Math.round(sr.top)}`;
     }
   }
@@ -265,6 +271,12 @@
   // Safari's toolbars sliding in and out resize the page without always
   // firing a window resize, so watch the canvas itself too
   if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+  // Safari ignores maximum-scale, so stop pinch-zoom here; a zoomed page
+  // crops the game
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("touchmove", (e) => {
+    if (e.scale !== undefined && e.scale !== 1) e.preventDefault();
+  }, { passive: false });
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", resize);
     window.visualViewport.addEventListener("scroll", resize);
@@ -290,7 +302,29 @@
   const MUSIC_SRC = "audio/music.mp3";
   const MUSIC_LEVEL = { attract: 0.22, countdown: 0.4, playing: 0.4, timesUp: 0 };
   const MUSIC_BONUS_LEVEL = 0.65; // the music swells for the bonus dance
-  const music = { el: null, gain: null, level: -1 };
+  const MUSIC_KEY = "spookyClaw.music";
+  const music = { el: null, gain: null, level: -1, on: loadMusicSetting() };
+
+  function loadMusicSetting() {
+    try {
+      return window.localStorage.getItem(MUSIC_KEY) !== "off";
+    } catch (e) {
+      return true;
+    }
+  }
+
+  // The cabinet's music button: music only; sound effects carry on
+  function setMusicOn(on) {
+    music.on = on;
+    try {
+      window.localStorage.setItem(MUSIC_KEY, on ? "on" : "off");
+    } catch (e) {
+      /* blocked storage: the setting lasts this visit only */
+    }
+    updateMusic();
+    if (on) syncMusicPlayback();
+    else setTimeout(syncMusicPlayback, 500); // let it fade first
+  }
 
   // The track is fully downloaded during loading (boot), then played from
   // that in-memory copy
@@ -319,7 +353,7 @@
   }
 
   function musicShouldPlay() {
-    return !!(music.el && sound.ctx && sound.on && !paused);
+    return !!(music.el && sound.ctx && sound.on && music.on && !paused && game.mode !== "goodbye");
   }
 
   function syncMusicPlayback() {
@@ -335,9 +369,10 @@
   // fuller in play, out at time's up so the organ has the stage
   function updateMusic() {
     if (!music.gain) return;
-    const level = game.bonus ? MUSIC_BONUS_LEVEL : MUSIC_LEVEL[game.mode] || 0;
+    const level = !music.on ? 0 : game.bonus ? MUSIC_BONUS_LEVEL : MUSIC_LEVEL[game.mode] || 0;
     if (level !== music.level) {
-      music.gain.gain.setTargetAtTime(level, sound.ctx.currentTime, game.mode === "timesUp" ? 0.25 : 0.6);
+      const quick = game.mode === "timesUp" || !music.on;
+      music.gain.gain.setTargetAtTime(level, sound.ctx.currentTime, quick ? 0.2 : 0.6);
       music.level = level;
     }
   }
@@ -567,6 +602,13 @@
       [[330, 0.16], [300, 0.16], [270, 0.16], [240, 0.5]].forEach(([f, d], i) => {
         tone(f, d, { type: "sawtooth", vol: 0.07, delay: 0.75 + i * 0.2, lowpass: 1400, vibrato: 22, attack: 0.02 });
         tone(f * 1.5, d, { type: "square", vol: 0.025, delay: 0.75 + i * 0.2, lowpass: 1600, attack: 0.02 });
+      });
+    },
+    goodbye: () => {
+      // Wah, wah, wah, waaah
+      [[392, 0.32], [370, 0.32], [349, 0.32], [330, 1.1]].forEach(([f, d], i) => {
+        tone(f, d, { type: "sawtooth", vol: 0.06, delay: i * 0.38, lowpass: 900, attack: 0.04, vibrato: i === 3 ? 6 : 0,
+          slideTo: i === 3 ? 300 : f * 0.97 });
       });
     },
     newBest: () => [784, 988, 1175, 1568].forEach((f, i) => bell(f, 0.8, 0.07, 1.3 + i * 0.11)),
@@ -840,7 +882,11 @@
   function buttonAt(p) {
     const inRect = (b) => p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1;
     if (game.mode === "attract") return inRect(BUTTONS.start) ? "start" : inRect(BUTTONS.sound) ? "sound" : null;
-    if (game.mode === "timesUp") return inRect(BUTTONS.again) ? "start" : null;
+    if (game.mode === "timesUp") return inRect(BUTTONS.again) ? "start" : inRect(BUTTONS.leave) ? "leave" : null;
+    if (game.mode === "goodbye") return null;
+    const inCircle = (b) => (p.x - b.cx) ** 2 + (p.y - b.cy) ** 2 <= b.r * b.r;
+    if (inCircle(BUTTONS.music)) return "music";
+    if (inCircle(BUTTONS.exit)) return "exit";
     if (inRect(BUTTONS.left)) return "left";
     if (inRect(BUTTONS.right)) return "right";
     const d = BUTTONS.drop;
@@ -850,6 +896,7 @@
 
   function syncPointerButtons() {
     input.left = input.right = input.start = input.sound = false;
+    input.music = input.exit = input.leave = false;
     let dropHeld = false;
     pointers.forEach((name) => {
       if (name === "left") input.left = true;
@@ -857,6 +904,9 @@
       if (name === "drop") dropHeld = true;
       if (name === "start") input.start = true;
       if (name === "sound") input.sound = true;
+      if (name === "music") input.music = true;
+      if (name === "exit") input.exit = true;
+      if (name === "leave") input.leave = true;
     });
     input.drop = dropHeld || keys.drop;
     input.left = input.left || keys.left;
@@ -873,6 +923,11 @@
       setSoundOn(!sound.on);
       sfx.click();
     }
+    if (name === "music") {
+      setMusicOn(!music.on);
+      sfx.click();
+    }
+    if (name === "exit" || name === "leave") leaveGame();
   }
 
   canvas.addEventListener("pointerdown", (e) => {
@@ -915,6 +970,17 @@
       return;
     }
     unlockAudio();
+    if (game.mode === "goodbye") {
+      if (e.code === "Enter" || e.code === "Space") {
+        e.preventDefault();
+        comeBack();
+      }
+      return;
+    }
+    if (e.code === "KeyM" && !e.repeat) {
+      setMusicOn(!music.on);
+      return;
+    }
     if (e.code === "Enter" || (e.code === "Space" && (game.mode === "attract" || game.mode === "timesUp"))) {
       e.preventDefault();
       if (!e.repeat) {
@@ -1364,8 +1430,9 @@
   }
 
   function render() {
-    setEnum("gameState", game.mode === "playing" && game.roundOver ? "playing" : game.mode);
-    setNum("timeRemaining", game.mode === "countdown" || game.mode === "attract" ? ROUND_SECONDS : Math.ceil(game.time));
+    // The goodbye slide is HTML over the cabinet; behind it the title card waits
+    setEnum("gameState", game.mode === "goodbye" ? "attract" : game.mode);
+    setNum("timeRemaining", game.mode === "playing" || game.mode === "timesUp" ? Math.ceil(game.time) : ROUND_SECONDS);
     setNum("score", game.score);
     setNum("bestScore", game.best);
     setBool("newBest", !!game.newBest && game.mode === "timesUp");
@@ -1385,6 +1452,10 @@
     setBool("dropPressed", live && input.drop);
     setBool("startPressed", input.start && (game.mode === "attract" || game.mode === "timesUp"));
     setBool("soundPressed", input.sound && game.mode === "attract");
+    setBool("musicPressed", !!input.music);
+    setBool("exitPressed", !!input.exit);
+    setBool("leavePressed", !!input.leave && game.mode === "timesUp");
+    setBool("musicOn", music.on);
     setBool("soundOn", sound.on);
 
     slots.forEach((slot, i) => pushPrize("prize" + i, slot, slot.x, slot.y, slot.scale || slot.def.s,
@@ -1427,7 +1498,7 @@
 
   // Add ?debug to the URL to inspect the game from the console
   if (/[?&]debug\b/.test(window.location.search)) window.spookyClaw = {
-    game, claw, slots, held, chute, prongs, input, keys, sound, sfx, music, tryStart, tryDrop, startBonus,
+    game, claw, slots, held, chute, prongs, input, keys, sound, sfx, music, tryStart, tryDrop, startBonus, leaveGame, comeBack,
     get fullscreenNote() { return fullscreenNote; },
     step(seconds, dt) { for (let t = 0; t < seconds; t += dt || 1 / 60) updateGame(dt || 1 / 60); render(); },
   };
@@ -1442,6 +1513,57 @@
     updateGame(dt);
     render();
   }
+
+  // ------------------------------------------------------------ leaving
+  // The cabinet's exit button and LEAVE on the results card both end here: a
+  // goodbye slide with the title plushies in tears. A round in progress is
+  // abandoned (its score isn't kept). "Play again" brings back the title card.
+  const goodbye = document.getElementById("goodbye");
+
+  function leaveGame() {
+    if (game.mode === "goodbye") return;
+    const finished = game.mode === "timesUp";
+    game.mode = "goodbye";
+    game.clock = 0;
+    game.bonus = false;
+    game.bonusPending = false;
+    game.roundOver = false;
+    claw.phase = "returning";
+    claw.holding = false;
+    held.kind = null;
+    chute.kind = null;
+    pointers.clear();
+    keys.left = keys.right = keys.drop = false;
+    syncPointerButtons();
+    document.getElementById("goodbyeScore").textContent = finished
+      ? `You delivered ${game.score} ${game.score === 1 ? "plushy" : "plushies"}.`
+      : "The plushies will miss you.";
+    goodbye.hidden = false;
+    document.getElementById("goodbyeAgain").focus({ preventScroll: true });
+    updateMusic(); // fades out...
+    setTimeout(syncMusicPlayback, 1500); // ...then stops
+    sfx.goodbye();
+    if (isFullscreen()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) {
+        exit.call(document);
+        wasFullscreen = false; // leaving on purpose, so START may ask again later
+      }
+    }
+  }
+
+  function comeBack() {
+    if (game.mode !== "goodbye") return;
+    goodbye.hidden = true;
+    resetHeap();
+    enterAttract();
+    syncMusicPlayback();
+    sfx.click();
+  }
+  document.getElementById("goodbyeAgain").addEventListener("click", () => {
+    unlockAudio();
+    comeBack();
+  });
 
   // ------------------------------------------------------------ loading
   // Download the Rive runtime, the game and the music with one progress bar,
