@@ -3,10 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <!-- Installable: "Add to Home Screen" opens the game without browser bars -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Spooky Claw">
   <meta name="theme-color" content="#36244a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <title>Spooky Claw</title>
-  <link rel="stylesheet" href="styles.css?v=202610302030">
+  <link rel="stylesheet" href="styles.css?v=202610302041">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -27,6 +34,6 @@
        tools/build.sh bumps them on every build. -->
   <!-- Rive web runtime, pinned and vendored: @rive-app/webgl2 2.44.2 -->
   <script src="vendor/rive-webgl2-2.44.2/rive.js"></script>
-  <script src="game.js?v=202610302030"></script>
+  <script src="game.js?v=202610302041"></script>
 </body>
 </html>

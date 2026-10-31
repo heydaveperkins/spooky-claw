@@ -1,0 +1,15 @@
+{
+  "name": "Spooky Claw",
+  "short_name": "Spooky Claw",
+  "description": "A Halloween claw machine: grab as many plushies as you can in 60 seconds.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#36244a",
+  "theme_color": "#36244a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

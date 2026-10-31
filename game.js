@@ -764,7 +764,10 @@
 
   function press(name) {
     if (name === "drop") tryDrop();
-    if (name === "start") tryStart();
+    if (name === "start") {
+      goFullscreen();
+      tryStart();
+    }
     if (name === "sound" && game.mode === "attract") {
       setSoundOn(!sound.on);
       sfx.click();
@@ -831,6 +834,27 @@
   function enterAttract() {
     game.mode = "attract";
     game.clock = 0;
+  }
+
+  // On touch devices whose browser allows it (Android, iPad), go fullscreen
+  // when the player taps START. iPhone Safari only allows fullscreen video, so
+  // there the way is "Add to Home Screen". Must run inside the tap itself.
+  function goFullscreen() {
+    const el = document.documentElement;
+    const request = el.requestFullscreen || el.webkitRequestFullscreen;
+    const already = document.fullscreenElement || document.webkitFullscreenElement;
+    const installed = window.matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches;
+    if (!request || already || installed || !window.matchMedia("(pointer: coarse)").matches) return;
+    try {
+      const done = request.call(el, { navigationUI: "hide" });
+      if (done && done.then) {
+        done.then(() => {
+          if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {});
+        }).catch(() => { /* refused: carry on in the page */ });
+      }
+    } catch (e) {
+      /* not allowed here (an iframe without allow="fullscreen", say) */
+    }
   }
 
   function tryStart() {
@@ -1262,6 +1286,8 @@
     }
   }
   document.addEventListener("visibilitychange", updatePaused);
+  document.addEventListener("fullscreenchange", resize);
+  document.addEventListener("webkitfullscreenchange", resize);
   if (portraitQuery.addEventListener) portraitQuery.addEventListener("change", updatePaused);
   else portraitQuery.addListener(updatePaused);
 

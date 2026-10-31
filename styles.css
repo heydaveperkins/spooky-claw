@@ -38,8 +38,13 @@ body {
   height: 100vh;
   height: 100svh;
   box-sizing: border-box;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* The side margins use the larger of the two insets on both sides: in
+     landscape the iPhone reports a bigger inset on its camera side, and
+     uneven padding would push the game off-centre */
+  padding: env(safe-area-inset-top)
+    max(env(safe-area-inset-left), env(safe-area-inset-right))
+    env(safe-area-inset-bottom)
+    max(env(safe-area-inset-left), env(safe-area-inset-right));
   background: var(--cabinet);
 }
 
