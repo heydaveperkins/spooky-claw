@@ -19,7 +19,7 @@
 
   // Claw geometry, matching scene.rml. Lengths in the claw's own space are
   // multiplied by CLAW_SCALE (the "Claw Front" / "Claw Back" nodes).
-  const RAIL_Y = 182;        // trolley sits on the rail here
+  const RAIL_Y = 262;        // trolley sits on the rail here
   const CLAW_SCALE = 1.3;
   const PRONG_PIVOT = { x: 26, y: 42 };  // side prong pivots, either side of the hub
   const PRONG_TIP = { x: 8, y: 89 };     // rubber tip centre in the prong's space
@@ -28,32 +28,32 @@
   const OPEN_TIP_DROP = 150; // hub top to the tips with the claw wide open
   const PRONG_RELAXED = 0.12, PRONG_OPEN = 0.85, PRONG_SHUT = -0.2; // radians
   const GRIP_INSET = 4;      // how far the rubber tips press into the plush
-  const FLOOR_Y = 690;       // bottom of the pile
-  const CLAW_MIN_X = 380;
-  const CLAW_MAX_X = 1610;
-  const HOME_X = 420;        // where the claw parks, just right of the chute
-  const CHUTE_X = 367;
-  const CHUTE_MOUTH_Y = 600; // a prize whose centre passes this is in the chute
+  const FLOOR_Y = 800;       // bottom of the pile
+  const CLAW_MIN_X = 470;
+  const CLAW_MAX_X = 1495;
+  const HOME_X = 525;        // where the claw parks, just right of the chute
+  const CHUTE_X = 470;
+  const CHUTE_MOUTH_Y = 740; // a prize whose centre passes this is in the chute
   const REST_L = 14;         // cable length at rest: high enough to carry over the heap
-  const MAX_L = 430;
+  const MAX_L = 420;
 
   // Feel. A cycle is roughly 7 s, so a decent player lands 7-10 a minute.
-  const MOVE_MAX = 480;
+  const MOVE_MAX = 560;
   const MOVE_ACCEL = 2600;
-  const MOVE_DECEL = 5200;
-  const DESCEND_SPEED = 520;
-  const LIFT_SPEED = 340;
-  const CARRY_SPEED = 480;
+  const MOVE_DECEL = 9000;
+  const DESCEND_SPEED = 620;
+  const LIFT_SPEED = 420;
+  const CARRY_SPEED = 580;
   const CLOSE_TIME = 0.55;
   const RELEASE_TIME = 0.45;
   const GRAVITY = 2600;
 
   // Grab odds by alignment (0 = dead centre, 1 = the prize's edge)
-  const CENTER_ZONE = 0.36;
+  const CENTER_ZONE = 0.42;
   const EDGE_ZONE = 0.75;
   const CENTER_GRAB = 0.9, CENTER_SLIP = 0.13;
   const EDGE_GRAB = 0.5, EDGE_SLIP = 0.5;
-  const SLIP_SAFE_X = 560;   // past here, on the way to the chute, a prize no longer slips
+  const SLIP_SAFE_X = 640;   // past here, on the way to the chute, a prize no longer slips
 
   const GOLD_CHANCE = 1 / 15;
   const KINDS = ["ghost", "blackCat", "pumpkin", "bat", "skeleton", "mummy",
@@ -63,18 +63,18 @@
   // The heap, matching tools/gen_prize.py. Slots 0-2 top, 3-6 middle,
   // 7-11 bottom. `on` lists the slots resting on each one.
   const SLOTS = [
-    { x: 895, y: 480, s: 1.28, r: -0.06, on: [] },
-    { x: 1105, y: 484, s: 1.28, r: 0.05, on: [] },
-    { x: 1315, y: 478, s: 1.28, r: 0.08, on: [] },
-    { x: 785, y: 562, s: 1.36, r: 0.07, on: [0] },
-    { x: 995, y: 558, s: 1.36, r: -0.05, on: [0, 1] },
-    { x: 1205, y: 564, s: 1.36, r: 0.04, on: [1, 2] },
-    { x: 1415, y: 560, s: 1.36, r: -0.08, on: [2] },
-    { x: 680, y: 640, s: 1.45, r: -0.04, on: [3] },
-    { x: 890, y: 638, s: 1.45, r: 0.05, on: [3, 4] },
-    { x: 1100, y: 641, s: 1.45, r: -0.03, on: [4, 5] },
-    { x: 1310, y: 639, s: 1.45, r: 0.06, on: [5, 6] },
-    { x: 1520, y: 640, s: 1.45, r: -0.05, on: [6] },
+    { x: 905, y: 571, s: 1.28, r: -0.06, on: [] },
+    { x: 1090, y: 575, s: 1.28, r: 0.05, on: [] },
+    { x: 1275, y: 569, s: 1.28, r: 0.08, on: [] },
+    { x: 812, y: 653, s: 1.36, r: 0.07, on: [0] },
+    { x: 997, y: 649, s: 1.36, r: -0.05, on: [0, 1] },
+    { x: 1182, y: 655, s: 1.36, r: 0.04, on: [1, 2] },
+    { x: 1367, y: 651, s: 1.36, r: -0.08, on: [2] },
+    { x: 720, y: 733, s: 1.45, r: -0.04, on: [3] },
+    { x: 905, y: 731, s: 1.45, r: 0.05, on: [3, 4] },
+    { x: 1090, y: 734, s: 1.45, r: -0.03, on: [4, 5] },
+    { x: 1275, y: 732, s: 1.45, r: 0.06, on: [5, 6] },
+    { x: 1460, y: 733, s: 1.45, r: -0.05, on: [6] },
   ];
   const HIDDEN_Y = 2000;
 
@@ -115,13 +115,17 @@
 
   // Tappable areas in artboard units (the art is in scene.rml)
   const BUTTONS = {
-    left: { x0: 215, x1: 405, y0: 700, y1: 900 },
-    right: { x0: 405, x1: 600, y0: 700, y1: 900 },
-    drop: { cx: 1610, cy: 800, r: 135 },
+    left: { x0: 15, x1: 175, y0: 540, y1: 770 },     // left wing, arrows
+    right: { x0: 175, x1: 340, y0: 540, y1: 770 },
+    drop: { cx: 1775, cy: 650, r: 150 },              // right wing
     start: { x0: 720, x1: 1030, y0: 545, y1: 685 },   // title card START
     sound: { x0: 1045, x1: 1265, y0: 545, y1: 685 },  // title card SOUND ON/OFF
     again: { x0: 795, x1: 1155, y0: 545, y1: 685 },   // results card PLAY AGAIN
   };
+
+  // The build stamp on this script's URL (game.js?v=...), reused for the .riv
+  // so an update is fetched fresh rather than from the browser's cache
+  const BUILD = (document.currentScript && new URL(document.currentScript.src).searchParams.get("v")) || "";
 
   // ------------------------------------------------------------ DOM
   const canvas = document.getElementById("game");
@@ -165,7 +169,7 @@
   }
 
   r = new riveLib.Rive({
-    src: "game.riv",
+    src: BUILD ? "game.riv?v=" + BUILD : "game.riv",
     canvas,
     stateMachine: "Cabinet",
     autoplay: true,
@@ -186,20 +190,16 @@
     },
   });
 
-  // How the 1950 x 900 artboard fits the window. The full height always
-  // shows; the decorative sides crop away on narrower screens, down to the
-  // playable band x 175..1775 (16:9), and below that the band is fitted whole
-  // with space above and below. So a phone with Safari's bars showing gets the
-  // whole cabinet, and nothing tappable is ever cut off.
-  const SAFE_HALF_W = 800;
-  function viewBounds(w, h) {
-    const halfW = Math.min(ART_W / 2, Math.max(SAFE_HALF_W, (w / h) * (ART_H / 2)));
-    return { minX: ART_W / 2 - halfW, maxX: ART_W / 2 + halfW, minY: 0, maxY: ART_H };
+  // How the 1950 x 900 artboard fits the window: whole, always. The
+  // controls and readouts live in the wings at the far left and right, so
+  // nothing can be cropped; spare space shows the page's cabinet colour.
+  function viewBounds() {
+    return { minX: 0, maxX: ART_W, minY: 0, maxY: ART_H };
   }
 
   // The same fit as screen numbers: artboard -> CSS pixels
   function viewTransform(rect) {
-    const b = viewBounds(rect.width, rect.height);
+    const b = viewBounds();
     const scale = Math.min(rect.width / (b.maxX - b.minX), rect.height / ART_H);
     return {
       scale,
@@ -208,13 +208,41 @@
     };
   }
 
+  // Size the stage to what is actually visible: the smaller of the visual
+  // viewport and the small viewport height (100svh), sitting at the bottom of
+  // the visual viewport, so a toolbar floating over the top hides nothing.
+  const stage = document.getElementById("stage");
+  const svhProbe = document.createElement("div");
+  svhProbe.style.cssText = "position:fixed;left:0;top:0;width:0;height:100vh;height:100svh;visibility:hidden;pointer-events:none";
+  document.body.appendChild(svhProbe);
+  let debugReadout = null;
+
+  function fitStage() {
+    const vv = window.visualViewport;
+    const vvH = vv ? vv.height : window.innerHeight;
+    const vvTop = vv ? vv.offsetTop : 0;
+    const svh = svhProbe.getBoundingClientRect().height || window.innerHeight;
+    const h = Math.min(vvH, svh, window.innerHeight);
+    stage.style.top = Math.round(vvTop + vvH - h) + "px";
+    stage.style.height = Math.round(h) + "px";
+    stage.style.bottom = "auto";
+    if (debugReadout) {
+      const sr = stage.getBoundingClientRect();
+      debugReadout.textContent =
+        `inner ${window.innerWidth}x${window.innerHeight}  dpr ${window.devicePixelRatio}\n` +
+        `visual ${vv ? Math.round(vv.width) + "x" + Math.round(vv.height) + " @" + Math.round(vv.offsetTop) : "n/a"}\n` +
+        `svh ${Math.round(svh)}  stage ${Math.round(sr.width)}x${Math.round(sr.height)} @${Math.round(sr.top)}`;
+    }
+  }
+
   let lastBounds = "";
   function resize() {
+    fitStage();
     if (!r) return;
     r.resizeDrawingSurfaceToCanvas(Math.min(window.devicePixelRatio || 1, 2));
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const b = viewBounds(rect.width, rect.height);
+    const b = viewBounds();
     const key = [b.minX, b.maxX].map(Math.round).join(",");
     if (key === lastBounds) return;
     lastBounds = key;
@@ -225,6 +253,16 @@
   // Safari's toolbars sliding in and out resize the page without always
   // firing a window resize, so watch the canvas itself too
   if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", resize);
+    window.visualViewport.addEventListener("scroll", resize);
+  }
+  if (/[?&]debug\b/.test(window.location.search)) {
+    debugReadout = document.createElement("div");
+    debugReadout.className = "viewport-debug";
+    document.body.appendChild(debugReadout);
+  }
+  fitStage();
 
   // ------------------------------------------------------------ audio
   // Everything is synthesised with Web Audio: no sound files. Browsers only
@@ -1090,7 +1128,7 @@
       sfx.deliver();
       if (heapEmpty() && !held.kind) after(0.8, refillAll);
     }
-    if (chute.y > 940) {
+    if (chute.y > 980) {
       chute.kind = null;
       chute.y = HIDDEN_Y;
     }

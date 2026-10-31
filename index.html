@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#36244a">
   <title>Spooky Claw</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=202610302030">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -23,8 +23,10 @@
 
   <noscript><p class="noscript">Spooky Claw needs JavaScript.</p></noscript>
 
+  <!-- The ?v= stamps make browsers fetch fresh copies after an update;
+       tools/build.sh bumps them on every build. -->
   <!-- Rive web runtime, pinned and vendored: @rive-app/webgl2 2.44.2 -->
   <script src="vendor/rive-webgl2-2.44.2/rive.js"></script>
-  <script src="game.js"></script>
+  <script src="game.js?v=202610302030"></script>
 </body>
 </html>
