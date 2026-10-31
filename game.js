@@ -261,25 +261,6 @@
   document.body.appendChild(svhProbe);
   let debugReadout = null;
 
-  // The dedication below the cabinet, shown once the player is in (not on the
-  // loading or goodbye screens) and only where the window leaves a spare bar
-  // there: wider-than-tall desktop windows, not a phone's full-width view
-  const pageDedication = document.getElementById("pageDedication");
-  let dedicationWanted = false;
-  function placeDedication() {
-    if (!pageDedication) return;
-    const rect = canvas.getBoundingClientRect();
-    const bar = rect.width && rect.height
-      ? (rect.height - ART_H * Math.min(rect.width / ART_W, rect.height / ART_H)) / 2
-      : 0;
-    const show = dedicationWanted && bar >= 24;
-    pageDedication.hidden = !show;
-    if (!show) return;
-    const font = Math.min(18, Math.max(11, bar * 0.4));
-    pageDedication.style.fontSize = font + "px";
-    pageDedication.style.bottom = Math.max(2, window.innerHeight - rect.bottom + bar / 2 - font / 2) + "px";
-  }
-
   function fitStage() {
     // If the page has been zoomed, the visual viewport is the zoomed-in
     // window, not the screen: size to the page instead
@@ -291,7 +272,6 @@
     stage.style.top = Math.round(vvTop + vvH - h) + "px";
     stage.style.height = Math.round(h) + "px";
     stage.style.bottom = "auto";
-    placeDedication();
     if (debugReadout) {
       const sr = stage.getBoundingClientRect();
       debugReadout.textContent =
@@ -1578,8 +1558,6 @@
     const finished = game.mode === "timesUp";
     track(finished ? "leave-after-round" : "leave-mid-round", "Left the game");
     game.mode = "goodbye";
-    dedicationWanted = false;
-    placeDedication();
     game.clock = 0;
     game.bonus = false;
     game.bonusPending = false;
@@ -1611,8 +1589,6 @@
   function comeBack() {
     if (game.mode !== "goodbye") return;
     goodbye.hidden = true;
-    dedicationWanted = true;
-    placeDedication();
     resetHeap();
     enterAttract();
     syncMusicPlayback();
@@ -1621,6 +1597,9 @@
   document.getElementById("goodbyeAgain").addEventListener("click", () => {
     unlockAudio();
     comeBack();
+  });
+  document.querySelector(".goodbye-melonbird a").addEventListener("click", () => {
+    track("melonbird", "Opened Melonbird");
   });
 
   // ------------------------------------------------------------ loading
@@ -1727,8 +1706,6 @@
   function enterGame() {
     if (entered || !canEnter) return;
     entered = true;
-    dedicationWanted = true;
-    placeDedication();
     track("enter", "Tapped to enter");
     goFullscreen();
     unlockAudio();

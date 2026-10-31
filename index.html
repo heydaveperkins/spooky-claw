@@ -13,8 +13,23 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <title>Spooky Claw</title>
+  <!-- Link previews (Facebook, iMessage, X, Slack...) -->
+  <meta name="description" content="A Halloween claw machine game. Grab as many plushies as you can in 60 seconds. Clear all 12 for a surprise MONSTER BONUS!">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Spooky Claw">
+  <meta property="og:title" content="Spooky Claw: a Halloween claw machine game">
+  <meta property="og:description" content="Grab as many plushies as you can in 60 seconds. Clear all 12 for a surprise MONSTER BONUS!">
+  <meta property="og:url" content="https://heydaveperkins.github.io/spooky-claw/">
+  <meta property="og:image" content="https://heydaveperkins.github.io/spooky-claw/share.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A purple claw machine full of Halloween plushies, with the claw carrying a ghost">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Spooky Claw: a Halloween claw machine game">
+  <meta name="twitter:description" content="Grab as many plushies as you can in 60 seconds. Clear all 12 for a surprise MONSTER BONUS!">
+  <meta name="twitter:image" content="https://heydaveperkins.github.io/spooky-claw/share.png">
   <link rel="preload" href="fonts/Fredoka-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=202610310937">
+  <link rel="stylesheet" href="styles.css?v=202610310956">
 </head>
 <body>
   <main class="stage" id="stage">
@@ -22,7 +37,6 @@
   </main>
 
   <!-- Shown in the spare bar below the cabinet while playing, when the window is wide or tall enough to leave one -->
-  <p class="page-dedication" id="pageDedication" hidden>Dedicated to my spooky inspirations: Gracie, Kennedy &amp; Olivia</p>
 
   <!-- Loading title screen: everything, music included, downloads before
        the player can enter. The ENTER tap also lets the browser play sound. -->
@@ -158,6 +172,7 @@
 
     <p class="goodbye-score" id="goodbyeScore"></p>
     <button class="goodbye-again" id="goodbyeAgain" type="button">Play again</button>
+    <p class="goodbye-melonbird">Check out our other big launch: <a href="http://melonbird.ai" target="_blank" rel="noopener">Melonbird</a>, the future of AI personalization</p>
   </section>
 
   <!-- Phones in a browser tab: how to get the full-screen, home-screen version -->
@@ -204,6 +219,6 @@
        tools/build.sh bumps them on every build. -->
   <!-- Rive web runtime, pinned and vendored: @rive-app/webgl2 2.44.2 -->
   <script src="vendor/rive-webgl2-2.44.2/rive.js"></script>
-  <script src="game.js?v=202610310937"></script>
+  <script src="game.js?v=202610310956"></script>
 </body>
 </html>

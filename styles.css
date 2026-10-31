@@ -450,6 +450,29 @@ body {
   outline: none;
 }
 
+/* A plug for Melonbird along the bottom, placed like the title screen's
+   dedication */
+.goodbye-melonbird {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(1.8vh, env(safe-area-inset-bottom));
+  z-index: 1;
+  margin: 0;
+  padding: 0 16px;
+  color: var(--bone);
+  font-size: clamp(11px, 2.6vh, 22px);
+  letter-spacing: 0.04em;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.goodbye-melonbird a {
+  color: #f0a35e;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tear { animation: none; opacity: 1; }
   .tear-late { display: none; }
@@ -471,29 +494,6 @@ body {
   opacity: 0.78;
   pointer-events: none;
 }
-
-/* The same dedication, kept on screen during play. game.js places it in the
-   spare bar below the cabinet and hides it when there is no room. */
-.page-dedication {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 4px;
-  z-index: 2;
-  margin: 0;
-  padding: 0 16px;
-  color: var(--bone);
-  font-family: "Fredoka", system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  text-align: center;
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.page-dedication[hidden] { display: none; }
 
 /* ------------------------------------------------------------ install tip */
 .tip {
