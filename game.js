@@ -1598,7 +1598,7 @@
     unlockAudio();
     comeBack();
   });
-  document.querySelector(".goodbye-melonbird a").addEventListener("click", () => {
+  document.querySelector(".melonbird-card")?.addEventListener("click", () => {
     track("melonbird", "Opened Melonbird");
   });
 
