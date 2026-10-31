@@ -386,15 +386,15 @@ body {
   font-size: clamp(13px, 3.4vh, 22px);
 }
 
-.sad-plushies { height: 28vh; gap: 7vh; }
+.sad-plushies { height: 22vh; gap: 7vh; }
 
 /* They stand still: no bobbing, just tears. Explicit width and height, so
    the row is centred however the browser measures it. */
 .sad-plush {
   position: relative;
   flex: none;
-  width: 28vh;
-  height: 28vh;
+  width: 22vh;
+  height: 22vh;
 }
 
 .sad-plush svg { display: block; width: 100%; height: 100%; }
@@ -450,22 +450,75 @@ body {
   outline: none;
 }
 
-/* A plug for Melonbird, just under Play again */
-.goodbye-melonbird {
+/* A card for Melonbird under Play again: the white logo on a dark panel,
+   the whole card one link */
+.melonbird-card {
   position: relative;
   z-index: 1;
-  margin: 0.6vh 0 0;
-  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5vh;
+  min-width: min(92vw, 100vh, 600px);
+  box-sizing: border-box;
+  margin-top: 2.2vh;
+  padding: 1.6vh 2vh 1.6vh 4vh;
+  border: 2px solid rgba(240, 146, 70, 0.55);
+  border-radius: 2.4vh;
+  background: #1b1630;
   color: var(--bone);
-  font-size: clamp(12px, 3vh, 22px);
-  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.melonbird-card:hover,
+.melonbird-card:focus-visible {
+  border-color: #f06631;
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.mb-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7vh;
+  flex: 1;
   text-align: center;
 }
 
-.goodbye-melonbird a {
-  color: #f0a35e;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+.mb-kicker {
+  color: #b79bd0;
+  font-size: clamp(9px, 2vh, 15px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mb-logo {
+  display: block;
+  width: auto;
+  height: clamp(18px, 5.4vh, 44px);
+}
+
+.mb-tag {
+  font-size: clamp(11px, 2.6vh, 19px);
+  letter-spacing: 0.02em;
+}
+
+.mb-cta {
+  flex: none;
+  min-height: 36px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0 2.6vh;
+  border-radius: 999px;
+  background: #f06631;
+  color: #fff;
+  font-size: clamp(12px, 2.8vh, 20px);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
