@@ -129,7 +129,13 @@
 
   // ------------------------------------------------------------ DOM
   const canvas = document.getElementById("game");
-  const loading = document.getElementById("loading");
+  const loader = document.getElementById("loader");
+  const loaderBar = document.getElementById("loaderBar");
+  const loaderFill = document.getElementById("loaderFill");
+  const loaderStatus = document.getElementById("loaderStatus");
+  const loaderPercent = document.getElementById("loaderPercent");
+  const loaderProgress = document.getElementById("loaderProgress");
+  const enterButton = document.getElementById("enterButton");
   const portraitQuery = window.matchMedia("(orientation: portrait) and (pointer: coarse)");
 
   // ------------------------------------------------------------ Rive
@@ -168,8 +174,11 @@
     if (h) h.trigger();
   }
 
-  r = new riveLib.Rive({
-    src: BUILD ? "game.riv?v=" + BUILD : "game.riv",
+  // Rive starts from the bytes boot() already downloaded (or the URL, if
+  // that download failed)
+  function startRive(rivBuffer) {
+    r = new riveLib.Rive({
+    ...(rivBuffer ? { buffer: rivBuffer } : { src: BUILD ? "game.riv?v=" + BUILD : "game.riv" }),
     canvas,
     stateMachine: "Cabinet",
     autoplay: true,
@@ -179,16 +188,19 @@
     onLoad: () => {
       vm = r.viewModelInstance;
       resize();
-      loading.hidden = true;
       resetHeap();
       enterAttract();
       requestAnimationFrame(frame);
+      riveReady = true;
+      showEnter();
     },
     onLoadError: (e) => {
-      loading.textContent = "Couldn't load the game.";
+      loaderStatus.textContent = "Couldn't load the game. Please reload.";
+      loaderPercent.textContent = "";
       console.error(e);
     },
-  });
+    });
+  }
 
   // How the 1950 x 900 artboard fits the window: whole, always. The
   // controls and readouts live in the wings at the far left and right, so
@@ -278,12 +290,31 @@
   const MUSIC_SRC = "audio/music.mp3";
   const MUSIC_LEVEL = { attract: 0.22, countdown: 0.4, playing: 0.4, timesUp: 0 };
   const music = { el: null, gain: null, level: -1 };
-  try {
-    music.el = new Audio(MUSIC_SRC);
-    music.el.loop = true;
-    music.el.preload = "auto";
-  } catch (e) {
-    music.el = null;
+
+  // The track is fully downloaded during loading (boot), then played from
+  // that in-memory copy
+  function setMusicSource(url) {
+    try {
+      music.el = new Audio(url);
+      music.el.loop = true;
+      music.el.preload = "auto";
+    } catch (e) {
+      music.el = null;
+    }
+    attachMusic();
+  }
+
+  // Route the music through Web Audio once both it and the context exist
+  function attachMusic() {
+    if (!music.el || music.gain || !sound.ctx) return;
+    try {
+      music.gain = sound.ctx.createGain();
+      music.gain.gain.value = 0;
+      sound.ctx.createMediaElementSource(music.el).connect(music.gain).connect(sound.master);
+    } catch (e) {
+      music.el = null; // no Web Audio routing here: go without music
+    }
+    syncMusicPlayback();
   }
 
   function musicShouldPlay() {
@@ -388,15 +419,7 @@
     sound.noise = buf;
     sound.motor = loopVoice(ctx, [["sawtooth", 48], ["square", 96, 7]], "lowpass", 300, 5, 11, 90);
     sound.winch = loopVoice(ctx, [["triangle", 150], ["square", 75, -5]], "bandpass", 850, 2, 23, 260);
-    if (music.el) {
-      try {
-        music.gain = ctx.createGain();
-        music.gain.gain.value = 0;
-        ctx.createMediaElementSource(music.el).connect(music.gain).connect(sound.master);
-      } catch (e) {
-        music.el = null; // no Web Audio routing here: go without music
-      }
-    }
+    attachMusic();
     if (ctx.state === "suspended") ctx.resume();
     syncMusicPlayback(); // inside the tap that unlocked audio, as iOS requires
   }
@@ -805,6 +828,14 @@
   const keys = { left: false, right: false, drop: false };
   const KEYMAP = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right", Space: "drop" };
   window.addEventListener("keydown", (e) => {
+    if (!entered) {
+      // On the loading screen, Enter or Space is the ENTER button
+      if ((e.code === "Enter" || e.code === "Space") && riveReady) {
+        e.preventDefault();
+        enterGame();
+      }
+      return;
+    }
     unlockAudio();
     if (e.code === "Enter" || (e.code === "Space" && (game.mode === "attract" || game.mode === "timesUp"))) {
       e.preventDefault();
@@ -1307,4 +1338,154 @@
     updateGame(dt);
     render();
   }
+
+  // ------------------------------------------------------------ loading
+  // Download the Rive runtime, the game and the music with one progress bar,
+  // so the game never starts with something missing. Sizes are estimates
+  // used when the server compresses a file (its byte count is then unknown).
+  const PRELOAD = [
+    { key: "wasm", url: "vendor/rive-webgl2-2.44.2/rive.wasm", size: 2178508 },
+    { key: "riv", url: BUILD ? "game.riv?v=" + BUILD : "game.riv", size: 72000 },
+    { key: "music", url: MUSIC_SRC, size: 2660000 },
+  ];
+  const STATUS = [[0.25, "Waking the ghosts..."], [0.5, "Stuffing the plushies..."],
+    [0.75, "Oiling the claw..."], [1.01, "Tuning the haunted organ..."]];
+  let riveReady = false;
+  let entered = false;
+
+  function showProgress() {
+    const total = PRELOAD.reduce((a, it) => a + it.size, 0);
+    const got = PRELOAD.reduce((a, it) => a + Math.min(it.got || 0, it.size), 0);
+    const p = Math.min(0.99, got / total); // 100% only once the game is running
+    const pct = Math.floor(p * 100);
+    loaderFill.style.width = pct + "%";
+    loaderBar.setAttribute("aria-valuenow", String(pct));
+    loaderPercent.textContent = pct + "%";
+    loaderStatus.textContent = STATUS.find(([upTo]) => p < upTo)[1];
+  }
+
+  async function fetchWithProgress(item) {
+    const res = await fetch(item.url);
+    if (!res.ok) throw new Error(item.url + " " + res.status);
+    const length = Number(res.headers.get("content-length")) || 0;
+    if (length && !res.headers.get("content-encoding")) item.size = length;
+    if (!res.body || !res.body.getReader) {
+      const buf = await res.arrayBuffer();
+      item.got = buf.byteLength;
+      return buf;
+    }
+    const reader = res.body.getReader();
+    const chunks = [];
+    item.got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      item.got += value.length;
+      showProgress();
+    }
+    const out = new Uint8Array(item.got);
+    let at = 0;
+    chunks.forEach((c) => {
+      out.set(c, at);
+      at += c.length;
+    });
+    return out.buffer;
+  }
+
+  async function boot() {
+    showInstallTip();
+    showProgress();
+    const files = {};
+    await Promise.all(PRELOAD.map((item) => fetchWithProgress(item)
+      .then((buf) => { files[item.key] = buf; })
+      .catch((err) => { console.warn("Spooky Claw: couldn't preload", item.url, err); })
+      .then(() => { item.got = item.size; showProgress(); })));
+    if (files.wasm) riveLib.RuntimeLoader.setWasmBinary(files.wasm);
+    if (files.music) setMusicSource(URL.createObjectURL(new Blob([files.music], { type: "audio/mpeg" })));
+    startRive(files.riv || null);
+  }
+
+  function showEnter() {
+    loaderFill.style.width = "100%";
+    loaderPercent.textContent = "100%";
+    loaderStatus.textContent = "Ready!";
+    setTimeout(() => {
+      loaderProgress.hidden = true;
+      enterButton.hidden = false;
+      enterButton.focus({ preventScroll: true });
+    }, 350);
+  }
+
+  // The ENTER tap is the first touch, so it also unlocks sound and music
+  function enterGame() {
+    if (entered || !riveReady) return;
+    entered = true;
+    unlockAudio();
+    sfx.click();
+    loader.classList.add("is-gone");
+    setTimeout(() => { loader.hidden = true; }, 600);
+  }
+  enterButton.addEventListener("click", enterGame);
+
+  // ------------------------------------------------------------ install tip
+  // On a phone or tablet in a browser tab, explain how to add the game to
+  // the home screen, where it runs full screen. Not shown once installed, in
+  // an embed (that would install the host page), or after "Don't show again".
+  const TIP_KEY = "spookyClaw.hideInstallTip";
+  const tip = document.getElementById("installTip");
+  const tipInstall = document.getElementById("tipInstall");
+  let installPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    // Chrome on Android offers a real install; use it from the tip's button
+    e.preventDefault();
+    installPrompt = e;
+    tipInstall.hidden = false;
+  });
+
+  function showInstallTip() {
+    const forced = /[?&]tip\b/.test(window.location.search); // for testing on desktop
+    const installed = window.navigator.standalone ||
+      window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+    const embedded = window.self !== window.top;
+    let hidden = false;
+    try {
+      hidden = window.localStorage.getItem(TIP_KEY) === "1";
+    } catch (e) {
+      /* blocked storage: show it */
+    }
+    const ua = window.navigator.userAgent;
+    const ios = /iP(hone|ad|od)/.test(ua) || (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+    const android = /Android/i.test(ua);
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    if (!forced && (installed || embedded || hidden || !touch || !(ios || android))) return;
+    document.getElementById(android && !forced ? "tipStepsAndroid" : "tipStepsIos").hidden = false;
+    tip.hidden = false;
+    document.getElementById("tipOk").focus({ preventScroll: true });
+  }
+
+  function closeTip() {
+    if (document.getElementById("tipNever").checked) {
+      try {
+        window.localStorage.setItem(TIP_KEY, "1");
+      } catch (e) {
+        /* blocked storage: it will show again next visit */
+      }
+    }
+    tip.hidden = true;
+    if (riveReady) enterButton.focus({ preventScroll: true });
+  }
+  document.getElementById("tipOk").addEventListener("click", closeTip);
+  tipInstall.addEventListener("click", () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.finally(() => {
+      installPrompt = null;
+      tipInstall.hidden = true;
+      closeTip();
+    });
+  });
+
+  boot();
 })();

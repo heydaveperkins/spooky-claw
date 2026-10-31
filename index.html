@@ -13,13 +13,118 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <title>Spooky Claw</title>
-  <link rel="stylesheet" href="styles.css?v=202610302041">
+  <link rel="preload" href="fonts/Fredoka-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=202610302056">
 </head>
 <body>
   <main class="stage" id="stage">
     <canvas id="game" aria-label="Spooky Claw claw machine game"></canvas>
-    <div class="loading" id="loading">Loading…</div>
   </main>
+
+  <!-- Loading title screen: everything, music included, downloads before
+       the player can enter. The ENTER tap also lets the browser play sound. -->
+  <section class="loader" id="loader" aria-label="Loading Spooky Claw">
+    <div class="loader-moon" aria-hidden="true"></div>
+    <svg class="loader-hills" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 200V90C150 40 280 40 420 90S700 140 820 80S960 50 1000 70V200Z" fill="#2e3a5e"/>
+      <path d="M0 200V140C180 110 330 120 500 150S780 160 1000 130V200Z" fill="#2a2448"/>
+    </svg>
+
+    <div class="loader-marquee">
+      <span class="bulbs bulbs-top" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <h1>SPOOKY CLAW</h1>
+      <span class="bulbs bulbs-bottom" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="loader-claw" aria-hidden="true">
+      <svg viewBox="0 0 120 170">
+        <rect x="57" y="0" width="6" height="58" fill="#b9b2c6"/>
+        <path d="M60 92 C 30 100 22 130 38 152" stroke="#8a8399" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M60 92 C 90 100 98 130 82 152" stroke="#6e6880" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M57 90 C 28 98 20 128 36 150" stroke="#b9b2c6" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M63 90 C 92 98 100 128 84 150" stroke="#b9b2c6" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <circle cx="36" cy="151" r="8" fill="#d98545"/><circle cx="84" cy="151" r="8" fill="#d98545"/>
+        <rect x="32" y="64" width="56" height="36" rx="15" fill="#8a8399"/>
+        <rect x="32" y="58" width="56" height="36" rx="15" fill="#b9b2c6"/>
+        <rect x="36" y="58" width="42" height="24" rx="11" fill="#dcd6e6"/>
+        <circle cx="60" cy="76" r="5" fill="#6e6880"/>
+      </svg>
+    </div>
+
+    <div class="loader-plushies" aria-hidden="true">
+      <!-- Pumpkin -->
+      <svg class="plush" viewBox="0 0 120 120">
+        <ellipse cx="62" cy="112" rx="46" ry="6" fill="#120a1c" opacity=".3"/>
+        <rect x="55" y="12" width="12" height="20" rx="5" fill="#6b5a3a" transform="rotate(10 61 22)"/>
+        <ellipse cx="78" cy="18" rx="12" ry="6" fill="#7c9356" transform="rotate(-20 78 18)"/>
+        <ellipse cx="64" cy="70" rx="52" ry="40" fill="#a85a2a"/>
+        <ellipse cx="60" cy="66" rx="52" ry="40" fill="#d98545"/>
+        <ellipse cx="54" cy="58" rx="36" ry="28" fill="#eba36a"/>
+        <path d="M44 32 C 34 52 34 82 44 102 M76 32 C 86 52 86 82 76 102" stroke="#b5652e" stroke-width="3" fill="none"/>
+        <circle cx="48" cy="62" r="5" fill="#2a1a33"/><circle cx="72" cy="62" r="5" fill="#2a1a33"/>
+        <path d="M54 76 Q60 81 66 76" stroke="#2a1a33" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Ghost -->
+      <svg class="plush" viewBox="0 0 120 120">
+        <ellipse cx="62" cy="112" rx="40" ry="6" fill="#120a1c" opacity=".3"/>
+        <path d="M24 104 V58 A36 36 0 0 1 100 58 V104 Q 94 96 87 104 Q 81 112 74 104 Q 68 96 62 104 Q 56 112 49 104 Q 43 96 37 104 Q 31 112 24 104 Z" fill="#c9bfa8" transform="translate(4 4)"/>
+        <path d="M24 104 V58 A36 36 0 0 1 100 58 V104 Q 94 96 87 104 Q 81 112 74 104 Q 68 96 62 104 Q 56 112 49 104 Q 43 96 37 104 Q 31 112 24 104 Z" fill="#f1eadb"/>
+        <path d="M34 56 A26 26 0 0 1 84 48 V70 H34 Z" fill="#fffbf2"/>
+        <circle cx="50" cy="62" r="5" fill="#2a1a33"/><circle cx="74" cy="62" r="5" fill="#2a1a33"/>
+        <ellipse cx="42" cy="74" rx="6" ry="3.5" fill="#e07a7a" opacity=".5"/><ellipse cx="82" cy="74" rx="6" ry="3.5" fill="#e07a7a" opacity=".5"/>
+        <path d="M56 74 Q62 79 68 74" stroke="#2a1a33" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Black cat -->
+      <svg class="plush" viewBox="0 0 120 120">
+        <ellipse cx="62" cy="112" rx="44" ry="6" fill="#120a1c" opacity=".3"/>
+        <path d="M18 50 L24 14 L48 36 Z M102 50 L96 14 L72 36 Z" fill="#3a2e4a" stroke="#3a2e4a" stroke-width="6" stroke-linejoin="round"/>
+        <rect x="16" y="30" width="92" height="80" rx="34" fill="#241c30" transform="translate(4 4)"/>
+        <rect x="16" y="30" width="92" height="80" rx="34" fill="#3a2e4a"/>
+        <ellipse cx="62" cy="72" rx="32" ry="22" fill="#e9dcbf"/>
+        <circle cx="50" cy="68" r="5" fill="#2a1a33"/><circle cx="74" cy="68" r="5" fill="#2a1a33"/>
+        <path d="M56 80 Q62 85 68 80" stroke="#2a1a33" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="loader-progress" id="loaderProgress">
+      <div class="loader-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loaderBar">
+        <div class="loader-fill" id="loaderFill"></div>
+      </div>
+      <p class="loader-status"><span id="loaderStatus">Waking the ghosts...</span> <span id="loaderPercent">0%</span></p>
+    </div>
+    <button class="enter-button" id="enterButton" type="button" hidden>TAP TO ENTER</button>
+  </section>
+
+  <!-- Phones in a browser tab: how to get the full-screen, home-screen version -->
+  <div class="tip" id="installTip" role="dialog" aria-modal="true" aria-labelledby="tipTitle" hidden>
+    <div class="tip-card">
+      <h2 id="tipTitle">Best on your home screen</h2>
+      <p class="tip-lead">Add Spooky Claw to your home screen to play full screen, with no browser bars in the way.</p>
+      <ol class="tip-steps" id="tipStepsIos" hidden>
+        <li><span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span><span class="tip-text">Tap the <b>Share</b> button in Safari's toolbar</span></li>
+        <li><span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v7M8.5 12h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span><span class="tip-text">Choose <b>Add to Home Screen</b>, then <b>Add</b></span></li>
+        <li><span class="tip-icon tip-icon-app" aria-hidden="true"><img src="icons/icon-180.png" alt=""></span><span class="tip-text">Open <b>Spooky Claw</b> from your home screen</span></li>
+      </ol>
+      <ol class="tip-steps" id="tipStepsAndroid" hidden>
+        <li><span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>
+        </span><span class="tip-text">Open your browser's <b>menu</b></span></li>
+        <li><span class="tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v7M8.5 12h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span><span class="tip-text">Tap <b>Install app</b> or <b>Add to Home screen</b></span></li>
+        <li><span class="tip-icon tip-icon-app" aria-hidden="true"><img src="icons/icon-180.png" alt=""></span><span class="tip-text">Open <b>Spooky Claw</b> from your home screen</span></li>
+      </ol>
+      <div class="tip-actions">
+        <button class="tip-install" id="tipInstall" type="button" hidden>Install</button>
+        <button class="tip-ok" id="tipOk" type="button">Got it</button>
+      </div>
+      <label class="tip-never" for="tipNever"><input type="checkbox" id="tipNever" aria-label="Don't show this again"> Don't show this again</label>
+    </div>
+  </div>
 
   <!-- Shown on phones held upright; the game pauses underneath -->
   <div class="rotate" id="rotate" role="alert">
@@ -34,6 +139,6 @@
        tools/build.sh bumps them on every build. -->
   <!-- Rive web runtime, pinned and vendored: @rive-app/webgl2 2.44.2 -->
   <script src="vendor/rive-webgl2-2.44.2/rive.js"></script>
-  <script src="game.js?v=202610302041"></script>
+  <script src="game.js?v=202610302056"></script>
 </body>
 </html>

@@ -1,10 +1,23 @@
 /* Spooky Claw: page shell. The game itself is drawn by Rive on one canvas. */
 
+@font-face {
+  font-family: "Fredoka";
+  src: url("fonts/Fredoka-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: block;
+}
+
 :root {
   --cabinet: #4e3569;
   --cabinet-deep: #36244a;
   --bone: #f7eeda;
   --pumpkin: #d98545;
+  --pumpkin-lit: #eba36a;
+  --pumpkin-shade: #a85a2a;
+  --bone-shade: #c4b28e;
+  --ink: #36244a;
+  --midnight: #263354;
+  --moss: #a3b878;
 }
 
 html,
@@ -55,20 +68,6 @@ body {
   touch-action: none; /* no scrolling, pinch or double-tap zoom on the game */
   outline: none;
   cursor: pointer;
-}
-
-.loading {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-}
-
-.loading[hidden] {
-  display: none;
 }
 
 /* Portrait fallback: only on touch devices, so a narrow desktop window
@@ -136,6 +135,338 @@ body {
   font: 11px/1.3 ui-monospace, Menlo, monospace;
   white-space: pre;
   pointer-events: none;
+}
+
+/* ------------------------------------------------------------ loader
+   The animated loading title screen. Sized from the viewport height so it
+   fits a phone in landscape. */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4vh;
+  overflow: hidden;
+  background: var(--midnight);
+  font-family: "Fredoka", system-ui, sans-serif;
+  font-weight: 600;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+.loader.is-gone {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader-moon {
+  position: absolute;
+  top: 9vh;
+  left: 14vw;
+  width: 15vh;
+  height: 15vh;
+  border-radius: 50%;
+  background: #c4b28e;
+  box-shadow: inset 2.2vh -1.4vh 0 0 #f7eeda, 0 0 0 5vh rgba(247, 238, 218, 0.08);
+}
+
+.loader-hills {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 34vh;
+}
+
+.loader-marquee {
+  position: relative;
+  z-index: 1;
+  padding: 1.6vh 6vh;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 0 0 0.9vh var(--pumpkin), 0 1.6vh 0 0.9vh var(--pumpkin-shade);
+}
+
+.loader-marquee h1 {
+  margin: 0;
+  color: var(--bone);
+  font-size: clamp(26px, 9vh, 80px);
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-shadow: 0 0.6vh 0 var(--pumpkin);
+  white-space: nowrap;
+}
+
+.bulbs {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bulbs-top { top: 0.7vh; }
+.bulbs-bottom { bottom: 0.7vh; }
+
+.bulbs i {
+  width: 1.3vh;
+  height: 1.3vh;
+  border-radius: 50%;
+  background: #f2cf73;
+  animation: bulb-chase 1.2s linear infinite;
+}
+
+.bulbs i:nth-child(2n) { animation-delay: -0.6s; }
+
+@keyframes bulb-chase {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.25; }
+}
+
+.loader-claw {
+  position: absolute;
+  top: 0;
+  left: 66vw;
+  width: 11vh;
+  transform-origin: 50% 0;
+  animation: claw-swing 3.2s ease-in-out infinite;
+}
+
+.loader-claw svg { display: block; width: 100%; }
+
+@keyframes claw-swing {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
+
+.loader-plushies {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3vh;
+  height: 22vh;
+}
+
+.plush {
+  height: 100%;
+  transform-origin: 50% 100%;
+  animation: plush-bob 1.4s ease-in-out infinite;
+}
+
+.plush:nth-child(2) { animation-delay: -0.45s; height: 92%; }
+.plush:nth-child(3) { animation-delay: -0.9s; }
+
+@keyframes plush-bob {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.94); }
+  45% { transform: translateY(-3.5vh) scale(0.96, 1.04); }
+  60% { transform: translateY(-3.8vh) scale(1, 1); }
+}
+
+.loader-progress {
+  position: relative;
+  z-index: 1;
+  width: min(62vw, 560px);
+  text-align: center;
+}
+
+.loader-bar {
+  height: max(18px, 4.6vh);
+  padding: 0.6vh;
+  border-radius: 999px;
+  background: var(--bone);
+  box-shadow: 0 0.8vh 0 var(--bone-shade);
+}
+
+.loader-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: repeating-linear-gradient(-45deg, var(--pumpkin) 0 14px, var(--pumpkin-lit) 14px 28px);
+  background-size: 40px 100%;
+  animation: candy-stripes 0.8s linear infinite;
+  transition: width 0.25s ease-out;
+}
+
+@keyframes candy-stripes {
+  to { background-position: 40px 0; }
+}
+
+.loader-status {
+  margin: 1.8vh 0 0;
+  color: #b79bd0;
+  font-size: clamp(13px, 3.4vh, 22px);
+  letter-spacing: 0.04em;
+}
+
+#loaderPercent { color: var(--bone); }
+
+.enter-button {
+  position: relative;
+  z-index: 1;
+  min-height: 52px;
+  padding: 1.8vh 7vh;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pumpkin);
+  box-shadow: inset -0.8vh -0.8vh 0 rgba(0, 0, 0, 0.06), 0 1.4vh 0 var(--pumpkin-shade);
+  color: var(--bone);
+  font: inherit;
+  font-size: clamp(18px, 5.4vh, 40px);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0.4vh 0 var(--pumpkin-shade);
+  cursor: pointer;
+  animation: enter-pulse 1.3s ease-in-out infinite;
+}
+
+.enter-button:active {
+  transform: translateY(1vh);
+  box-shadow: 0 0.4vh 0 var(--pumpkin-shade);
+  animation: none;
+}
+
+.enter-button:focus-visible {
+  outline: 3px solid var(--bone);
+  outline-offset: 6px;
+}
+
+@keyframes enter-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* ------------------------------------------------------------ install tip */
+.tip {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(20, 12, 34, 0.6);
+  font-family: "Fredoka", system-ui, sans-serif;
+}
+
+.tip[hidden] { display: none; }
+
+.tip-card {
+  width: min(520px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 20px 24px 18px;
+  border-radius: 28px;
+  background: var(--bone);
+  box-shadow: 0 10px 0 var(--bone-shade);
+  color: var(--ink);
+}
+
+.tip-card h2 {
+  margin: 0 0 4px;
+  color: var(--pumpkin);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.tip-lead {
+  margin: 0 0 12px;
+  color: #6a4c88;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.tip-steps {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+}
+
+.tip-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.tip-steps b { font-weight: 650; }
+
+.tip-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--midnight);
+  color: var(--bone);
+}
+
+.tip-icon svg { width: 22px; height: 22px; }
+.tip-icon-app { overflow: hidden; background: none; }
+.tip-icon-app img { width: 36px; height: 36px; border-radius: 9px; }
+
+.tip-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tip-actions button {
+  flex: 1;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.tip-ok {
+  background: var(--pumpkin);
+  box-shadow: 0 6px 0 var(--pumpkin-shade);
+  color: var(--bone);
+}
+
+.tip-install {
+  background: var(--moss);
+  box-shadow: 0 6px 0 #566b38;
+  color: var(--ink);
+}
+
+.tip-actions button:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.tip-never {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: #6a4c88;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+.tip-never input { width: 20px; height: 20px; accent-color: var(--pumpkin); }
+
+/* In a short landscape window, lay the tip steps out more tightly */
+@media (max-height: 420px) {
+  .tip-card { padding: 14px 20px 12px; }
+  .tip-card h2 { font-size: 20px; }
+  .tip-lead { margin-bottom: 6px; font-size: 14px; }
+  .tip-steps li { padding: 3px 0; }
+  .tip-never { margin-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulbs i, .loader-claw, .plush, .loader-fill, .enter-button { animation: none; }
 }
 
 .noscript {
