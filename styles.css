@@ -450,21 +450,16 @@ body {
   outline: none;
 }
 
-/* A plug for Melonbird along the bottom, placed like the title screen's
-   dedication */
+/* A plug for Melonbird, just under Play again */
 .goodbye-melonbird {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: max(1.8vh, env(safe-area-inset-bottom));
+  position: relative;
   z-index: 1;
-  margin: 0;
+  margin: 0.6vh 0 0;
   padding: 0 16px;
   color: var(--bone);
-  font-size: clamp(11px, 2.6vh, 22px);
+  font-size: clamp(12px, 3vh, 22px);
   letter-spacing: 0.04em;
   text-align: center;
-  opacity: 0.85;
 }
 
 .goodbye-melonbird a {
