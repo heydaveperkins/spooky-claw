@@ -130,6 +130,35 @@
   // so an update is fetched fresh rather than from the browser's cache
   const BUILD = (document.currentScript && new URL(document.currentScript.src).searchParams.get("v")) || "";
 
+  // ------------------------------------------------------------ analytics
+  // Visit and play counts through GoatCounter: no cookies, no personal data,
+  // no consent banner. Set your site code (the part before .goatcounter.com)
+  // to switch it on; left empty, nothing is loaded or sent. It is also off
+  // with ?debug or ?tip in the address, and GoatCounter ignores localhost.
+  const GOATCOUNTER_CODE = "clawgame";
+  const analyticsOn = !!GOATCOUNTER_CODE && !/[?&](debug|tip)\b/.test(window.location.search);
+  const pendingEvents = [];
+
+  // Events show in the dashboard by name (a few go in as "play-start" etc.)
+  function track(name, title) {
+    if (!analyticsOn) return;
+    const gc = window.goatcounter;
+    if (gc && typeof gc.count === "function") gc.count({ path: name, title: title || name, event: true });
+    else pendingEvents.push([name, title]); // the script is still loading
+  }
+
+  function loadAnalytics() {
+    if (!analyticsOn) return;
+    const tag = document.createElement("script");
+    tag.async = true;
+    tag.src = "https://gc.zgo.at/count.js";
+    tag.dataset.goatcounter = "https://" + GOATCOUNTER_CODE + ".goatcounter.com/count";
+    // Count plays inside an iframe too, such as the Webflow embed
+    tag.dataset.goatcounterSettings = JSON.stringify({ allow_frame: true });
+    tag.onload = () => pendingEvents.splice(0).forEach(([name, title]) => track(name, title));
+    document.head.appendChild(tag);
+  }
+
   // ------------------------------------------------------------ DOM
   const canvas = document.getElementById("game");
   const loader = document.getElementById("loader");
@@ -734,6 +763,7 @@
     if (game.bonus) return;
     game.bonusPending = false;
     game.bonus = true;
+    track("bonus", "Monster Bonus earned");
     game.bonusClock = 0;
     const kinds = KINDS.concat(GOLD);
     slots.forEach((slot, i) => {
@@ -1051,6 +1081,7 @@
       // Every round starts with a full heap of 12
       if (game.mode === "timesUp" || slots.some((slot) => !slot.kind)) resetHeap();
       game.mode = "countdown";
+      track("play-start", "Round started");
       game.clock = 0;
       game.score = 0;
       game.time = ROUND_SECONDS;
@@ -1064,6 +1095,8 @@
 
   function endRound() {
     game.mode = "timesUp";
+    track("round-complete", "Round finished");
+    track("score-" + (game.score >= 15 ? "15plus" : game.score), "Score " + game.score);
     game.clock = 0;
     game.newBest = game.score > game.best;
     if (game.newBest) {
@@ -1523,6 +1556,7 @@
   function leaveGame() {
     if (game.mode === "goodbye") return;
     const finished = game.mode === "timesUp";
+    track(finished ? "leave-after-round" : "leave-mid-round", "Left the game");
     game.mode = "goodbye";
     game.clock = 0;
     game.bonus = false;
@@ -1620,6 +1654,9 @@
   }
 
   async function boot() {
+    loadAnalytics();
+    const installed = window.navigator.standalone || window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+    track(installed ? "open-home-screen" : window.self !== window.top ? "open-embed" : "open-browser", "How it was opened");
     showInstallTip();
     showProgress();
     const files = {};
@@ -1647,6 +1684,7 @@
   function enterGame() {
     if (entered || !riveReady) return;
     entered = true;
+    track("enter", "Tapped to enter");
     goFullscreen();
     unlockAudio();
     sfx.click();
@@ -1689,6 +1727,7 @@
     if (!forced && (installed || embedded || hidden || !touch || !(ios || android))) return;
     document.getElementById(android && !forced ? "tipStepsAndroid" : "tipStepsIos").hidden = false;
     tip.hidden = false;
+    track("install-tip-shown", "Home-screen tip shown");
     document.getElementById("tipOk").focus({ preventScroll: true });
   }
 
@@ -1713,6 +1752,8 @@
       closeTip();
     });
   });
+
+  window.addEventListener("appinstalled", () => track("installed", "Added to home screen"));
 
   boot();
 })();

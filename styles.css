@@ -154,6 +154,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2.4vh;
+  box-sizing: border-box;
+  /* Equal side margins from the larger safe-area inset, as on the stage, so
+     content centres between the notch and the opposite edge */
+  padding: env(safe-area-inset-top)
+    max(env(safe-area-inset-left), env(safe-area-inset-right))
+    env(safe-area-inset-bottom);
+  text-align: center;
   overflow: hidden;
   background: var(--midnight);
   font-family: "Fredoka", system-ui, sans-serif;
@@ -251,17 +258,23 @@ body {
   z-index: 1;
   display: flex;
   align-items: flex-end;
+  justify-content: center;
   gap: 3vh;
+  width: 100%;
   height: 22vh;
 }
 
+/* Explicit sizes: no aspect-ratio or percentage heights for Safari to work out */
 .plush {
-  height: 100%;
+  flex: none;
+  display: block;
+  width: 22vh;
+  height: 22vh;
   transform-origin: 50% 100%;
   animation: plush-bob 1.4s ease-in-out infinite;
 }
 
-.plush:nth-child(2) { animation-delay: -0.45s; height: 92%; }
+.plush:nth-child(2) { animation-delay: -0.45s; width: 20vh; height: 20vh; }
 .plush:nth-child(3) { animation-delay: -0.9s; }
 
 @keyframes plush-bob {
@@ -373,13 +386,15 @@ body {
   font-size: clamp(13px, 3.4vh, 22px);
 }
 
-.sad-plushies { height: 30vh; gap: 7vh; }
+.sad-plushies { height: 28vh; gap: 7vh; }
 
-/* They stand still: no bobbing, just tears */
+/* They stand still: no bobbing, just tears. Explicit width and height, so
+   the row is centred however the browser measures it. */
 .sad-plush {
   position: relative;
-  height: 100%;
-  aspect-ratio: 1;
+  flex: none;
+  width: 28vh;
+  height: 28vh;
 }
 
 .sad-plush svg { display: block; width: 100%; height: 100%; }
@@ -438,6 +453,23 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .tear { animation: none; opacity: 1; }
   .tear-late { display: none; }
+}
+
+/* A small dedication along the bottom of the title screen */
+.dedication {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(1.8vh, env(safe-area-inset-bottom));
+  z-index: 1;
+  margin: 0;
+  padding: 0 16px;
+  color: var(--bone);
+  font-size: clamp(11px, 3vh, 17px);
+  letter-spacing: 0.05em;
+  text-align: center;
+  opacity: 0.78;
+  pointer-events: none;
 }
 
 /* ------------------------------------------------------------ install tip */
