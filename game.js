@@ -289,6 +289,7 @@
   // pausing control it. Volume per game state, relative to the master.
   const MUSIC_SRC = "audio/music.mp3";
   const MUSIC_LEVEL = { attract: 0.22, countdown: 0.4, playing: 0.4, timesUp: 0 };
+  const MUSIC_BONUS_LEVEL = 0.65; // the music swells for the bonus dance
   const music = { el: null, gain: null, level: -1 };
 
   // The track is fully downloaded during loading (boot), then played from
@@ -334,7 +335,7 @@
   // fuller in play, out at time's up so the organ has the stage
   function updateMusic() {
     if (!music.gain) return;
-    const level = MUSIC_LEVEL[game.mode] || 0;
+    const level = game.bonus ? MUSIC_BONUS_LEVEL : MUSIC_LEVEL[game.mode] || 0;
     if (level !== music.level) {
       music.gain.gain.setTargetAtTime(level, sound.ctx.currentTime, game.mode === "timesUp" ? 0.25 : 0.6);
       music.level = level;
@@ -560,6 +561,14 @@
         tone(f * 1.006, dur, { type: "square", vol: 0.04, delay: d, lowpass: 1100, attack: 0.03 });
       });
     },
+    bonus: () => {
+      // A fanfare, then a vampire's "mwah-ha-ha"
+      [523, 659, 784, 1047, 1319].forEach((f, i) => bell(f, 0.9, 0.08, i * 0.1));
+      [[330, 0.16], [300, 0.16], [270, 0.16], [240, 0.5]].forEach(([f, d], i) => {
+        tone(f, d, { type: "sawtooth", vol: 0.07, delay: 0.75 + i * 0.2, lowpass: 1400, vibrato: 22, attack: 0.02 });
+        tone(f * 1.5, d, { type: "square", vol: 0.025, delay: 0.75 + i * 0.2, lowpass: 1600, attack: 0.02 });
+      });
+    },
     newBest: () => [784, 988, 1175, 1568].forEach((f, i) => bell(f, 0.8, 0.07, 1.3 + i * 0.11)),
   };
 
@@ -601,6 +610,9 @@
     best: loadBest(),
     roundOver: false,  // timer hit 0 while an attempt was still running
     slips: 0,
+    bonus: false,      // the clear-the-machine celebration is playing
+    bonusClock: 0,
+    bonusPending: false, // the last prize just landed; the bonus starts in a moment
   };
 
   const claw = {
@@ -642,8 +654,13 @@
       slot.y = slot.def.y;
       slot.fall = null;
       slot.busy = false;
+      slot.ring = null;
+      slot.scale = null;
+      slot.rot = undefined;
       setPrizeState(slot, "resting");
     });
+    game.bonus = false;
+    game.bonusPending = false;
     if (Math.random() < 0.5) slots[(Math.random() * 3) | 0].kind = GOLD; // a rare treat up top
     scheduled.length = 0;
   }
@@ -661,6 +678,67 @@
   }
 
   const heapEmpty = () => slots.every((slot) => !slot.kind);
+
+  // ------------------------------------------------------------ bonus
+  // Clearing all 12 before time runs out earns the MONSTER BONUS: the clock
+  // stops, Rive plays the Dracula dance (Game.bonus), and every plush design
+  // dances in a ring around him, using the now-empty heap slots. Then the
+  // machine refills and play carries on.
+  const BONUS_SECONDS = 7;
+  const BONUS_RING = [[655, 770], [805, 790], [1145, 790], [1295, 770], [560, 600], [1390, 600],
+    [700, 470], [1310, 445], [800, 330], [975, 285], [1150, 330]];
+
+  function startBonus() {
+    if (game.bonus) return;
+    game.bonusPending = false;
+    game.bonus = true;
+    game.bonusClock = 0;
+    const kinds = KINDS.concat(GOLD);
+    slots.forEach((slot, i) => {
+      slot.fall = null;
+      slot.busy = true;
+      slot.kind = i < BONUS_RING.length ? kinds[i] : null;
+      if (!slot.kind) return;
+      slot.ring = BONUS_RING[i];
+      slot.x = slot.ring[0];
+      slot.y = slot.ring[1];
+      slot.scale = 1.05;
+      slot.rot = 0;
+      setPrizeState(slot, "inChute"); // happy faces
+    });
+    sfx.bonus();
+  }
+
+  function updateBonus(dt) {
+    game.bonusClock += dt;
+    const t = game.bonusClock;
+    slots.forEach((slot, i) => {
+      if (!slot.ring) return;
+      // Two hops a second, in time with Dracula's bounce, each a little out of step
+      slot.y = slot.ring[1] - Math.abs(Math.sin(t * Math.PI * 2 + i * 0.6)) * 26;
+      slot.x = slot.ring[0] + Math.sin(t * Math.PI + i) * 8;
+      slot.rot = Math.sin(t * Math.PI * 2 + i) * 0.15;
+    });
+    if (t >= BONUS_SECONDS) endBonus();
+  }
+
+  function endBonus() {
+    game.bonus = false;
+    slots.forEach((slot) => {
+      slot.kind = null;
+      slot.busy = false;
+      slot.ring = null;
+      slot.scale = null;
+      slot.rot = undefined;
+      slot.y = HIDDEN_Y;
+      setPrizeState(slot, "resting");
+    });
+    if (game.roundOver) {
+      if (!cycleRunning()) endRound();
+    } else {
+      refillAll();
+    }
+  }
 
   // Slots a prize can rest in: the bottom layer, or a slot whose supports are
   // all filled
@@ -839,7 +917,10 @@
     unlockAudio();
     if (e.code === "Enter" || (e.code === "Space" && (game.mode === "attract" || game.mode === "timesUp"))) {
       e.preventDefault();
-      if (!e.repeat) tryStart();
+      if (!e.repeat) {
+        goFullscreen();
+        tryStart();
+      }
       return;
     }
     const k = KEYMAP[e.code];
@@ -867,21 +948,32 @@
     game.clock = 0;
   }
 
-  // On touch devices whose browser allows it (Android, iPad), go fullscreen
-  // when the player taps START. iPhone Safari only allows fullscreen video, so
-  // there the way is "Add to Home Screen". Must run inside the tap itself.
+  // Go fullscreen on ENTER and START wherever the browser allows it
+  // (computers, Android, iPad). iPhone Safari only allows fullscreen video,
+  // so there the way is "Add to Home Screen". Must run inside the tap or key
+  // press itself. If the player leaves fullscreen (Esc), we stop asking.
+  let leftFullscreen = false;
+  let fullscreenNote = ""; // what happened last time we asked (shown by ?debug)
+  let wasFullscreen = false;
+  const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function onFullscreenChange() {
+    if (wasFullscreen && !isFullscreen()) leftFullscreen = true;
+    wasFullscreen = isFullscreen();
+    resize();
+  }
+
   function goFullscreen() {
     const el = document.documentElement;
     const request = el.requestFullscreen || el.webkitRequestFullscreen;
-    const already = document.fullscreenElement || document.webkitFullscreenElement;
     const installed = window.matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches;
-    if (!request || already || installed || !window.matchMedia("(pointer: coarse)").matches) return;
+    if (!request || isFullscreen() || installed || leftFullscreen) return;
     try {
+      fullscreenNote = "requested";
       const done = request.call(el, { navigationUI: "hide" });
       if (done && done.then) {
         done.then(() => {
           if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {});
-        }).catch(() => { /* refused: carry on in the page */ });
+        }).catch((err) => { fullscreenNote = "refused: " + err.message; }); // carry on in the page
       }
     } catch (e) {
       /* not allowed here (an iframe without allow="fullscreen", say) */
@@ -917,9 +1009,11 @@
   }
 
   const cycleRunning = () => !(claw.phase === "idle" || claw.phase === "moving");
+  // The bonus is playing or about to: the round waits for it to finish
+  const bonusDue = () => game.bonus || game.bonusPending;
 
   function tryDrop() {
-    if (game.mode !== "playing" || game.roundOver || cycleRunning()) return;
+    if (game.mode !== "playing" || game.roundOver || game.bonus || cycleRunning()) return;
     claw.v = 0;
     claw.slipped = false;
     claw.target = prizeUnder(claw.x);
@@ -1152,7 +1246,7 @@
           c.v = 0;
           c.phase = "idle";
           setNum("prizeIndex", -1);
-          if (game.roundOver) endRound();
+          if (game.roundOver && !bonusDue()) endRound();
         }
         break;
     }
@@ -1181,7 +1275,13 @@
       game.score += 1;
       fire("delivered");
       sfx.deliver();
-      if (heapEmpty() && !held.kind) after(0.8, refillAll);
+      // Cleared the whole machine: the bonus dance, then a fresh heap
+      // Marked at once, so the round can't end before the bonus plays, even
+      // when this was the last attempt as the clock ran out
+      if (heapEmpty() && !held.kind) {
+        game.bonusPending = true;
+        after(0.6, startBonus);
+      }
     }
     if (chute.y > 980) {
       chute.kind = null;
@@ -1234,13 +1334,13 @@
         sfx.go();
       }
     } else if (game.mode === "playing" && !game.roundOver) {
-      game.time = Math.max(0, game.time - dt);
+      if (!game.bonus) game.time = Math.max(0, game.time - dt); // the clock stops for the bonus
       const second = Math.ceil(game.time);
       if (second !== game.lastSecond && second <= 10 && second > 0) sfx.clock(); // the last ten seconds tick
       game.lastSecond = second;
       if (game.time <= 0) {
         // Let an attempt in progress finish and count
-        if (cycleRunning()) game.roundOver = true;
+        if (cycleRunning() || bonusDue()) game.roundOver = true;
         else endRound();
       }
     }
@@ -1250,6 +1350,7 @@
     updateProngs(dt);
     updateChute(dt);
     updateSlots(dt);
+    if (game.bonus) updateBonus(dt);
   }
 
   // ------------------------------------------------------------ push to Rive
@@ -1277,7 +1378,8 @@
     setEnum("clawState", claw.phase);
 
     const live = game.mode === "playing" && !game.roundOver;
-    setBool("controlsLocked", !live || cycleRunning());
+    setBool("controlsLocked", !live || game.bonus || cycleRunning());
+    setBool("bonus", game.bonus);
     setBool("leftPressed", live && input.left);
     setBool("rightPressed", live && input.right);
     setBool("dropPressed", live && input.drop);
@@ -1285,7 +1387,8 @@
     setBool("soundPressed", input.sound && game.mode === "attract");
     setBool("soundOn", sound.on);
 
-    slots.forEach((slot, i) => pushPrize("prize" + i, slot, slot.x, slot.y, slot.def.s, slot.def.r));
+    slots.forEach((slot, i) => pushPrize("prize" + i, slot, slot.x, slot.y, slot.scale || slot.def.s,
+      slot.rot !== undefined ? slot.rot : slot.def.r));
     pushPrize("heldPrize", held, held.lx, held.ly, held.s, 0);
     pushPrize("chutePrize", chute, chute.x, chute.y, chute.s, 0);
     setNum("prongLeft", prongs.l);
@@ -1317,14 +1420,15 @@
     }
   }
   document.addEventListener("visibilitychange", updatePaused);
-  document.addEventListener("fullscreenchange", resize);
-  document.addEventListener("webkitfullscreenchange", resize);
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
   if (portraitQuery.addEventListener) portraitQuery.addEventListener("change", updatePaused);
   else portraitQuery.addListener(updatePaused);
 
   // Add ?debug to the URL to inspect the game from the console
   if (/[?&]debug\b/.test(window.location.search)) window.spookyClaw = {
-    game, claw, slots, held, chute, prongs, input, keys, sound, sfx, music, tryStart, tryDrop,
+    game, claw, slots, held, chute, prongs, input, keys, sound, sfx, music, tryStart, tryDrop, startBonus,
+    get fullscreenNote() { return fullscreenNote; },
     step(seconds, dt) { for (let t = 0; t < seconds; t += dt || 1 / 60) updateGame(dt || 1 / 60); render(); },
   };
 
@@ -1421,6 +1525,7 @@
   function enterGame() {
     if (entered || !riveReady) return;
     entered = true;
+    goFullscreen();
     unlockAudio();
     sfx.click();
     loader.classList.add("is-gone");
