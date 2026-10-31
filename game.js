@@ -272,6 +272,12 @@
     stage.style.top = Math.round(vvTop + vvH - h) + "px";
     stage.style.height = Math.round(h) + "px";
     stage.style.bottom = "auto";
+    // Share the visible area with the loading and goodbye screens
+    const root = document.documentElement.style;
+    const top = Math.round(vvTop + vvH - h);
+    root.setProperty("--vh", (h / 100).toFixed(2) + "px");
+    root.setProperty("--vtop", top + "px");
+    root.setProperty("--vbottom", Math.max(0, Math.round(window.innerHeight - top - h)) + "px");
     if (debugReadout) {
       const sr = stage.getBoundingClientRect();
       debugReadout.textContent =
